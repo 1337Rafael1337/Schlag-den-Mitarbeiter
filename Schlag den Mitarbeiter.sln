@@ -5,8 +5,13 @@ VisualStudioVersion = 17.9.34701.34
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Projektmappenelemente", "{F6C8B265-FC6B-4141-B1D2-F1B9281AC210}"
 	ProjectSection(SolutionItems) = preProject
-		control.html = control.html
-		scoreboard.html = scoreboard.html
+		rebuild-for-hosting\control.html = rebuild-for-hosting\control.html
+		rebuild-for-hosting\games.json = rebuild-for-hosting\games.json
+		rebuild-for-hosting\index.html = rebuild-for-hosting\index.html
+		rebuild-for-hosting\Logo.png = rebuild-for-hosting\Logo.png
+		rebuild-for-hosting\scoreboard.html = rebuild-for-hosting\scoreboard.html
+		rebuild-for-hosting\server.py = rebuild-for-hosting\server.py
+		rebuild-for-hosting\web.config = rebuild-for-hosting\web.config
 	EndProjectSection
 EndProject
 Global

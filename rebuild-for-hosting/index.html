@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schlag den Mitarbeiter - Spieleverwaltung</title>
+    <style>
+        body {
+            font-family: 'Impact', sans-serif;
+            background-color: #ffcc33;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            width: 100%;
+            color: black;
+            overflow-x: hidden;
+        }
+        .container {
+            background-color: #ffcc33;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1000px;
+            text-align: center;
+            box-sizing: border-box;
+            flex-direction: column;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+        }
+        img {
+            max-width: 80%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .game-item {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .game-item p {
+            font-size: 1.5em;
+            margin: 0 0 10px 0;
+        }
+        .game-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .game-actions a, .game-actions button {
+            font-size: 1.2em;
+            color: #007BFF;
+            text-decoration: none;
+            padding: 10px;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+        .game-actions button {
+            color: #FF5733;
+        }
+        .game-actions a:hover, .game-actions button:hover {
+            text-decoration: underline;
+        }
+        .create-game-btn {
+            width: 100%;
+            max-width: 300px;
+            padding: 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-size: 1.5em;
+        }
+        .create-game-btn:hover {
+            background-color: #0056b3;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <img src="Logo.png" alt="Schlag den Mitarbeiter Logo">
+        <h2>Aktive Spiele</h2>
+        <div id="games-list"></div>
+        <button class="create-game-btn" onclick="createGame()">Neues Spiel erstellen</button>
+    </div>
+
+   
+    <footer>
+        &copy; <span id="copyright-year"></span> Rafael Seel. Alle Rechte vorbehalten.
+    </footer>
+
+    <script>
+       
+        document.getElementById('copyright-year').textContent = new Date().getFullYear();
+
+        async function loadGames() {
+            try {
+                const response = await fetch('/api/games');
+                
+                if (!response.ok) {
+                    throw new Error(`Fehler bei der Anfrage: ${response.status} ${response.statusText}`);
+                }
+                
+                const games = await response.json();
+                const gamesList = document.getElementById('games-list');
+                gamesList.innerHTML = '';
+
+                if (games.length === 0) {
+                    gamesList.innerHTML = '<p>Keine aktiven Spiele verfügbar.</p>';
+                } else {
+                    games.forEach(game => {
+                        const gameElement = document.createElement('div');
+                        gameElement.className = 'game-item';
+                        gameElement.innerHTML = `
+                            <p><strong>${game.name}</strong> (Spiel-ID: ${game.game_id})</p>
+                            <div class="game-actions">
+                                <a href="/control?game_id=${game.game_id}" target="_blank">Spiel konfigurieren</a>
+                                <a href="/scoreboard?game_id=${game.game_id}" target="_blank">Spielstand anzeigen</a>
+                                <button onclick="deleteGame('${game.game_id}')">Spiel löschen</button>
+                            </div>
+                        `;
+                        gamesList.appendChild(gameElement);
+                    });
+                }
+            } catch (error) {
+                console.error('Fehler beim Laden der Spiele:', error);
+                const gamesList = document.getElementById('games-list');
+                gamesList.innerHTML = `<p style="color: red;">Fehler beim Laden der Spiele: ${error.message}</p>`;
+            }
+        }
+
+        async function createGame() {
+            const gameName = prompt("Bitte gib den Namen für das neue Spiel ein:");
+            if (!gameName) {
+                alert("Der Spielname darf nicht leer sein!");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/games', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: gameName })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Fehler beim Erstellen eines neuen Spiels.');
+                }
+
+                loadGames(); 
+            } catch (error) {
+                console.error('Fehler beim Erstellen eines neuen Spiels:', error);
+            }
+        }
+
+        async function deleteGame(gameId) {
+            if (!confirm("Möchtest du dieses Spiel wirklich löschen?")) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/games/${gameId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) {
+                    throw new Error('Fehler beim Löschen des Spiels.');
+                }
+
+                loadGames(); 
+            } catch (error) {
+                console.error('Fehler beim Löschen des Spiels:', error);
+            }
+        }
+
+        
+        loadGames();
+    </script>
+</body>
+</html>

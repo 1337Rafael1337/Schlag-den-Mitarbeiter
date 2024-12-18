@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punkteverwaltung</title>
+    <style>
+        body {
+            font-family: 'Impact', sans-serif;
+            background-color: #ffcc33;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: black;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        label {
+            font-size: 1.2em;
+            display: block;
+            text-align: left;
+            margin: 10px 0 5px 0;
+        }
+        input[type="text"], input[type="number"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Punkteverwaltung</h1>
+        <form id="controlForm">
+            <label for="team1">Name Team 1:</label>
+            <input type="text" id="team1" name="team1" value="Team 1" required>
+            
+            <label for="team2">Name Team 2:</label>
+            <input type="text" id="team2" name="team2" value="Team 2" required>
+
+            <label for="spiele">Anzahl der Spiele:</label>
+            <input type="number" id="spiele" name="spiele" min="1" max="15" value="15" required>
+            
+            <div id="spielInputs">
+               
+            </div>
+        </form>
+    </div>
+
+    
+    <footer>
+        &copy; <span id="copyright-year"></span> Rafael Seel. Alle Rechte vorbehalten.
+    </footer>
+
+    <script>
+        
+        document.getElementById('copyright-year').textContent = new Date().getFullYear();
+
+        const form = document.getElementById('controlForm');
+        const spieleInput = document.getElementById('spiele');
+        const spielInputsContainer = document.getElementById('spielInputs');
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameId = urlParams.get('game_id');
+        const localStorageKey = `punktetafel_${gameId}`;
+
+        function loadData() {
+            const savedData = JSON.parse(localStorage.getItem(localStorageKey));
+            if (savedData) {
+                document.getElementById('team1').value = savedData.team1 || 'Team 1';
+                document.getElementById('team2').value = savedData.team2 || 'Team 2';
+                spieleInput.value = savedData.spiele || 15;
+                createSpielInputs(savedData.spiele);
+                for (let i = 1; i <= savedData.spiele; i++) {
+                    document.getElementById(`spiel${i}`).value = savedData[`spiel${i}`] || '';
+                }
+            } else {
+                createSpielInputs(spieleInput.value);
+            }
+        }
+
+        function createSpielInputs(spiele) {
+            spielInputsContainer.innerHTML = '';
+            for (let i = 1; i <= spiele; i++) {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label for="spiel${i}">Gewinner Spiel ${i} (1 für Team 1, 2 für Team 2):</label>
+                    <input type="number" id="spiel${i}" name="spiel${i}" min="1" max="2">
+                `;
+                spielInputsContainer.appendChild(div);
+            }
+            // Event-Listener für alle dynamisch erstellten Felder hinzufügen
+            addInputListeners();
+        }
+
+        function saveData() {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            localStorage.setItem(localStorageKey, JSON.stringify(data));
+            console.log('Punktetafel automatisch aktualisiert');
+        }
+
+        function addInputListeners() {
+            const inputs = form.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('input', saveData);
+            });
+        }
+
+        spieleInput.addEventListener('input', () => {
+            createSpielInputs(spieleInput.value);
+            saveData(); // Speichern, wenn die Anzahl der Spiele geändert wird
+        });
+
+        loadData();
+        addInputListeners();
+    </script>
+</body>
+</html>

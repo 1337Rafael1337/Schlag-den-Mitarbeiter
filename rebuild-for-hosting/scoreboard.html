@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punktetafel</title>
+    <style>
+        body {
+            font-family: 'Impact', sans-serif;
+            background-color: #ffcc33;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: black;
+        }
+        .scoreboard {
+            background-color: #ffcc33;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1000px;
+            text-align: center;
+            box-sizing: border-box;
+            flex-grow: 1;
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 20px;
+            height: 50px;
+        }
+        .progress {
+            height: 100%;
+            border-radius: 20px;
+            text-align: center;
+            line-height: 50px;
+            color: white;
+            font-weight: bold;
+        }
+        .team1-progress {
+            background-color: #007BFF;
+        }
+        .team2-progress {
+            background-color: #FF5733;
+        }
+        .winner-progress {
+            background-color: #28a745 !important;
+        }
+        .rounds-info {
+            font-size: 2em;
+            margin-top: 10px;
+        }
+        #team1-score, #team2-score {
+            font-size: 2.5em;
+            margin-top: 10px;
+        }
+        .round-tiles {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .round-tile {
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .team1-tile {
+            background-color: #007BFF;
+        }
+        .team2-tile {
+            background-color: #FF5733;
+        }
+        .no-winner {
+            background-color: #ccc;
+            color: black;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="scoreboard">
+        <h1>Punktetafel</h1>
+        <div id="rounds-info" class="rounds-info"></div>
+        <div id="team1-score"></div>
+        <div class="progress-bar">
+            <div id="team1-progress" class="progress team1-progress">0%</div>
+        </div>
+        <div id="team2-score" style="margin-top: 20px;"></div>
+        <div class="progress-bar">
+            <div id="team2-progress" class="progress team2-progress">0%</div>
+        </div>
+        <div id="round-tiles" class="round-tiles"></div>
+    </div>
+
+    <footer>
+        &copy; <span id="copyright-year"></span> Rafael Seel. Alle Rechte vorbehalten.
+    </footer>
+
+    <script>
+        document.getElementById('copyright-year').textContent = new Date().getFullYear();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameId = urlParams.get('game_id');
+        const localStorageKey = `punktetafel_${gameId}`;
+
+        function updateScoreboard() {
+            const data = JSON.parse(localStorage.getItem(localStorageKey));
+            if (data) {
+                let team1Punkte = 0;
+                let team2Punkte = 0;
+                const team1Name = data.team1 || "Team 1";
+                const team2Name = data.team2 || "Team 2";
+                const totalGames = parseInt(data.spiele) || 15;
+
+                let gespielteRunden = 0;
+                const roundTilesContainer = document.getElementById('round-tiles');
+                roundTilesContainer.innerHTML = '';
+
+                for (let i = 1; i <= totalGames; i++) {
+                    const winner = data[`spiel${i}`];
+                    let tileClass = 'no-winner';
+                    let tileText = '';
+
+                    if (winner === '1') {
+                        team1Punkte += i;
+                        gespielteRunden++;
+                        tileClass = 'team1-tile';
+                        tileText = `T1`;
+                    } else if (winner === '2') {
+                        team2Punkte += i;
+                        gespielteRunden++;
+                        tileClass = 'team2-tile';
+                        tileText = `T2`;
+                    }
+
+                    const roundTile = document.createElement('div');
+                    roundTile.className = `round-tile ${tileClass}`;
+                    roundTile.textContent = tileText;
+                    roundTilesContainer.appendChild(roundTile);
+                }
+
+                const maxPoints = (totalGames * (totalGames + 1)) / 2;
+                const team1Percent = (team1Punkte / maxPoints) * 100;
+                const team2Percent = (team2Punkte / maxPoints) * 100;
+
+                document.getElementById('rounds-info').textContent = `Gespielte Runden: ${gespielteRunden} von ${totalGames}`;
+                document.getElementById('team1-score').textContent = `${team1Name}: ${team1Punkte} Punkte`;
+                document.getElementById('team2-score').textContent = `${team2Name}: ${team2Punkte} Punkte`;
+
+                const team1Progress = document.getElementById('team1-progress');
+                const team2Progress = document.getElementById('team2-progress');
+
+                team1Progress.style.width = `${team1Percent}%`;
+                team1Progress.textContent = `${Math.round(team1Percent)}%`;
+
+                team2Progress.style.width = `${team2Percent}%`;
+                team2Progress.textContent = `${Math.round(team2Percent)}%`;
+
+                const remainingPointsTeam1 = calculateRemainingPoints(data, totalGames, '1');
+                const remainingPointsTeam2 = calculateRemainingPoints(data, totalGames, '2');
+
+                if (team1Punkte > team2Punkte + remainingPointsTeam2) {
+                    team1Progress.classList.add('winner-progress');
+                } else {
+                    team1Progress.classList.remove('winner-progress');
+                }
+
+                if (team2Punkte > team1Punkte + remainingPointsTeam1) {
+                    team2Progress.classList.add('winner-progress');
+                } else {
+                    team2Progress.classList.remove('winner-progress');
+                }
+            } else {
+                alert('Keine Daten gefunden. Bitte konfigurieren Sie die Spiele auf der Kontrollseite.');
+            }
+        }
+
+        function calculateRemainingPoints(data, totalGames, team) {
+            let remainingPoints = 0;
+            for (let i = 1; i <= totalGames; i++) {
+                const winner = data[`spiel${i}`];
+                if (!winner) {
+                    remainingPoints += i;
+                }
+            }
+            return remainingPoints;
+        }
+
+        window.addEventListener('load', updateScoreboard);
+        setInterval(updateScoreboard, 2000);
+    </script>
+</body>
+</html>
